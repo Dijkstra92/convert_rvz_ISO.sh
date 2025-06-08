@@ -39,12 +39,25 @@ if [ ! -x "$EXTRACT_XISO_BIN" ]; then
   echo "✅ extract-xiso prêt à l’emploi."
 fi
 
-# === Demande des chemins ===
-read -e -p "📂 Dossier source contenant les ISO Xbox 360 : " SRC_DIR
-read -e -p "📁 Dossier de destination : " DEST_DIR
+# === Demande des chemins avec glissé-déposé autorisé ===
+echo "📂 Glisse et dépose le dossier source contenant les ISO Xbox 360, puis appuie sur Entrée :"
+read -e SRC_DIR
+SRC_DIR="${SRC_DIR/#\~/$HOME}"
+SRC_DIR="${SRC_DIR%/}" # Retire le slash final
+
+echo "📁 Glisse et dépose le dossier de destination, puis appuie sur Entrée :"
+read -e DEST_DIR
+DEST_DIR="${DEST_DIR/#\~/$HOME}"
+DEST_DIR="${DEST_DIR%/}"
+
+# Nettoyage des éventuelles quotes autour du chemin (glisser-déposer met parfois des guillemets)
+SRC_DIR="${SRC_DIR%\"}"
+SRC_DIR="${SRC_DIR#\"}"
+DEST_DIR="${DEST_DIR%\"}"
+DEST_DIR="${DEST_DIR#\"}"
 
 if [ ! -d "$SRC_DIR" ]; then
-  echo "❌ Dossier source invalide."
+  echo "❌ Dossier source invalide : $SRC_DIR"
   exit 1
 fi
 
@@ -61,7 +74,7 @@ done < <(find "$SRC_DIR" -type f -iname "*.iso" -print0)
 
 total_files=${#iso_files[@]}
 if [ "$total_files" -eq 0 ]; then
-  echo "❌ Aucun fichier ISO trouvé."
+  echo "❌ Aucun fichier ISO trouvé dans $SRC_DIR"
   exit 1
 fi
 
@@ -83,11 +96,10 @@ for iso_file in "${iso_files[@]}"; do
   echo ""
   echo "📦 Extraction de : $iso_file"
   LOGFILE=$(mktemp)
-  
+
   "$EXTRACT_XISO_BIN" -d "$output_dir" -x "$iso_file" > "$LOGFILE" 2>&1 &
   pid=$!
 
-  # Animation barre extraction pendant extraction
   while kill -0 "$pid" 2>/dev/null; do
     fake_extract_progress
   done
@@ -107,4 +119,3 @@ for iso_file in "${iso_files[@]}"; do
 done
 
 echo -e "\n🎉 Tous les fichiers ont été extraits avec succès."
-
