@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 
-# === CONFIG ===
-EXTRACT_XISO_DIR="$HOME/extract-xiso-bin"
-EXTRACT_XISO_BIN="$EXTRACT_XISO_DIR/extract-xiso"
-GITHUB_RELEASE_URL="https://github.com/XboxDev/extract-xiso/releases/download/build-202505152050/extract-xiso_macOS.zip"
+# === Localisation du dossier du script ===
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+EXTRACT_XISO_BIN="$SCRIPT_DIR/extract-xiso"
+
+# === Vérification de l’exécutable extract-xiso ===
+if [ ! -x "$EXTRACT_XISO_BIN" ]; then
+  echo "❌ Le fichier extract-xiso est introuvable ou non exécutable dans : $SCRIPT_DIR"
+  exit 1
+fi
 
 # === Barre de progression analyse ===
 draw_progress_bar() {
@@ -29,28 +34,17 @@ fake_extract_progress() {
   echo ""
 }
 
-# === Téléchargement auto de extract-xiso ===
-if [ ! -x "$EXTRACT_XISO_BIN" ]; then
-  echo "🔧 Téléchargement de extract-xiso pour macOS..."
-  mkdir -p "$EXTRACT_XISO_DIR"
-  curl -L "$GITHUB_RELEASE_URL" -o "$EXTRACT_XISO_DIR/extract-xiso.zip" || { echo "❌ Échec du téléchargement."; exit 1; }
-  unzip -o "$EXTRACT_XISO_DIR/extract-xiso.zip" -d "$EXTRACT_XISO_DIR" || { echo "❌ Échec de la décompression."; exit 1; }
-  chmod +x "$EXTRACT_XISO_BIN"
-  echo "✅ extract-xiso prêt à l’emploi."
-fi
-
 # === Demande des chemins avec glissé-déposé autorisé ===
 echo "📂 Glisse et dépose le dossier source contenant les ISO Xbox 360, puis appuie sur Entrée :"
 read -e SRC_DIR
 SRC_DIR="${SRC_DIR/#\~/$HOME}"
-SRC_DIR="${SRC_DIR%/}" # Retire le slash final
+SRC_DIR="${SRC_DIR%/}"
 
 echo "📁 Glisse et dépose le dossier de destination, puis appuie sur Entrée :"
 read -e DEST_DIR
 DEST_DIR="${DEST_DIR/#\~/$HOME}"
 DEST_DIR="${DEST_DIR%/}"
 
-# Nettoyage des éventuelles quotes autour du chemin (glisser-déposer met parfois des guillemets)
 SRC_DIR="${SRC_DIR%\"}"
 SRC_DIR="${SRC_DIR#\"}"
 DEST_DIR="${DEST_DIR%\"}"
